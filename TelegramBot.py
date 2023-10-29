@@ -1,4 +1,5 @@
-﻿
+# Импорт библиотек﻿
+
 import pandas as pd
 import openai
 import numpy as np
@@ -11,16 +12,29 @@ import re
 from sentence_transformers import SentenceTransformer
 import telebot
 
-bot = telebot.TeleBot("...")
+# Сохранение API-ключей для Telegram-бота и OpenAI
 
+bot = telebot.TeleBot("...")
 openai.api_key = "..."
-COMPLETIONS_MODEL = "text-davinci-003"
+
+# Импорт данных 
 
 df = pd.read_csv(r'C:\Users\User\Desktop\APS\df', encoding = 'utf-8')
 df = df.set_index(["Name", "id"])
 df = df[(df['Text']!='') & (df['Text'].isna()!=True)]
 
-model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2')
+enc = tiktoken.encoding_for_model("text-davinci-003")
+df['tokens'] = df['Text'].apply(lambda x: len(enc.encode(x)))
+
+context_embeddings = pd.read_csv(r'C:\Users\User\Desktop\APS\embeddings.csv')
+context_embeddings = context_embeddings.to_dict('list')
+
+for i in context_embeddings.keys():
+    context_embeddings[i] = np.array(context_embeddings[i])
+
+# Функции для создания эмбеддингов, подсчета семантического сходства и ранжирования релевантных фрагментов текста
+
+model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2') #(пример лидерборда: https://github.com/avidale/encodechka)
 
 def get_embedding(text: str) -> List[float]:
     result = model.encode(text)
@@ -34,13 +48,6 @@ def compute_doc_embeddings(df: pd.DataFrame) -> Dict[Tuple[str, str], List[float
         time.sleep(1)
     return a
 
-context_embeddings = pd.read_csv(r'C:\Users\User\Desktop\APS\embeddings.csv')
-context_embeddings = context_embeddings.to_dict('list')
-
-for i in context_embeddings.keys():
-    context_embeddings[i] = np.array(context_embeddings[i])
-
-
 def vector_similarity(x: List[float], y: List[float]) -> float:
     return np.dot(np.array(x), np.array(y))
 
@@ -53,14 +60,12 @@ def order_document_sections_by_query_similarity(query: str, contexts: Dict[Tuple
     
     return document_similarities
 
+#Функция для создания подходящего промпта
+
 MAX_SECTION_LEN = 2000
 SEPARATOR = "\n* "
 
-enc = tiktoken.encoding_for_model("text-davinci-003")
-df['tokens'] = df['Text'].apply(lambda x: len(enc.encode(x)))
-
 separator_len = len(enc.encode(SEPARATOR))
-
 
 def construct_prompt(question: str, context_embeddings: dict, df: pd.DataFrame) -> str:
     
@@ -92,9 +97,11 @@ def construct_prompt(question: str, context_embeddings: dict, df: pd.DataFrame) 
 COMPLETIONS_API_PARAMS = {
     "temperature": 0.0,
     "max_tokens": 2000,
-    "model": COMPLETIONS_MODEL,
+    "model": "text-davinci-003",
     "stop":['<<END>>']
 }
+
+#Функция для формулировани ответа
 
 def answer_query_with_context(
     query: str,
@@ -120,6 +127,8 @@ def answer_query_with_context(
             )
    
     return response["choices"][0]["text"].strip(" \n")
+
+#Запуск Telegram-бота
 
 @bot.message_handler(func = lambda _: True)
 def handle_message(message):
