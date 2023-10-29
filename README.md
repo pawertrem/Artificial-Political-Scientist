@@ -1,8 +1,7 @@
-# Artificial-Political-Scientist
-A code for building a GPT-enabled RETRO (Retrieval-Enhanced Transformer) bot, which would provide political analysts with informational support. 
-A bot's architecture can be considered as two-fold one:
+# Первый Робот Политолог
+Прототип реализации модели типа Retrieval Augmented Generation для автоматизации информационной поддержки политических экспертов. Идея бота - использование LLM поверх готовой базы знаний. Этапы функционирования: 
 
-1) Semantic Search - transformer model encodes a question and finds for it a vector with the highest dot product among preliminary encoded text fragments
-2) Articulation of answer with Text-Davinci-003 on the basis of text fragments with the highest dot products
+1) Семантический поиск – модель-трансформер кодирует вопрос и находит для него вектор с наибольшим скалярным произведением среди предварительно закодированных фрагментов текста
+2) Формулирование ответа с помощью Text-Davinci-003 на основе фрагментов текста, отобранных на первом этапе
 
-Data is presented by fragmented content of Russian political science journal "Citizen. Elections. Authority" (https://www.rcoit.ru/lib/gvv/)
+В качестве данных использовалось предобработанное текстовое содержание статей журнала "Гражданин. Выборы. Власть", опубликованных после 2018 года (https://www.rcoit.ru/lib/gvv/)
